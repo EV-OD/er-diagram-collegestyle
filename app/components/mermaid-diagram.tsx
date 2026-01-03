@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
-import { Download } from "lucide-react";
+import { Download, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface MermaidDiagramProps {
   code: string;
@@ -26,7 +27,12 @@ export default function MermaidDiagram({ code }: MermaidDiagramProps) {
       try {
         setError(null);
         const { svg } = await mermaid.render(`mermaid-${Date.now()}`, code);
-        setSvg(svg);
+        // Remove max-width constraint and ensure SVG takes full space
+        const cleanSvg = svg
+          .replace(/max-width:[^;"]+;?/g, "")
+          .replace(/height="[^"]*"/, "")
+          .replace(/width="[^"]*"/, 'width="100%"');
+        setSvg(cleanSvg);
       } catch (err) {
         console.error("Mermaid render error:", err);
         setError("Failed to render diagram. Syntax might be invalid.");
@@ -54,21 +60,61 @@ export default function MermaidDiagram({ code }: MermaidDiagramProps) {
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col">
-      <div className="absolute top-2 right-2 z-10">
-        <button
-          onClick={handleDownload}
-          className="p-2 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-md shadow-sm border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
-          title="Download SVG"
-        >
-          <Download className="w-4 h-4" />
-        </button>
-      </div>
-      <div 
-        ref={ref} 
-        className="w-full overflow-auto p-4 bg-white rounded-lg shadow-sm border border-zinc-200 min-h-[300px] flex items-center justify-center"
-        dangerouslySetInnerHTML={{ __html: svg }}
-      />
+    <div className="relative w-full h-full flex flex-col bg-white rounded-lg shadow-sm border border-zinc-200 overflow-hidden">
+      <TransformWrapper
+        initialScale={1}
+        minScale={0.5}
+        maxScale={4}
+        centerOnInit
+      >
+        {({ zoomIn, zoomOut, resetTransform }) => (
+          <>
+            <div className="absolute top-2 right-2 z-10 flex gap-2">
+              <div className="flex bg-white dark:bg-zinc-800 rounded-md shadow-sm border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                <button
+                  onClick={() => zoomIn()}
+                  className="p-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors border-r border-zinc-200 dark:border-zinc-700"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => zoomOut()}
+                  className="p-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors border-r border-zinc-200 dark:border-zinc-700"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => resetTransform()}
+                  className="p-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                  title="Reset Zoom"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              </div>
+              <button
+                onClick={handleDownload}
+                className="p-2 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-md shadow-sm border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                title="Download SVG"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            </div>
+            <TransformComponent
+              wrapperClass="w-full h-full min-h-[500px] overflow-hidden"
+              wrapperStyle={{ width: "100%", height: "100%" }}
+              contentClass="w-full h-full flex items-center justify-center"
+            >
+              <div 
+                ref={ref} 
+                className="w-full h-full flex items-center justify-center"
+                dangerouslySetInnerHTML={{ __html: svg }}
+              />
+            </TransformComponent>
+          </>
+        )}
+      </TransformWrapper>
     </div>
   );
 }

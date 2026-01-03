@@ -436,7 +436,6 @@ CREATE TABLE posts (
                 </div>
               )}
 
-              {activeTab !== "saved" && (
                 <div className="flex gap-2">
                   <button
                     type="submit"
@@ -461,7 +460,6 @@ CREATE TABLE posts (
                     </button>
                   )}
                 </div>
-              )}
 
               {error && (
                 <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
