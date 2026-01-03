@@ -59,7 +59,24 @@ export default function ErGenerator() {
         console.error("Failed to parse saved connections", e);
       }
     }
-  }, []);
+
+    const lastUsed = localStorage.getItem("er-maker-last-connection");
+    if (lastUsed) {
+      try {
+        const conn = JSON.parse(lastUsed);
+        setValue("dbType", conn.dbType || "postgres");
+        setValue("connectionMode", conn.connectionMode || "url");
+        if (conn.connectionString) setValue("connectionString", conn.connectionString);
+        if (conn.host) setValue("host", conn.host);
+        if (conn.port) setValue("port", conn.port);
+        if (conn.database) setValue("database", conn.database);
+        if (conn.user) setValue("user", conn.user);
+        if (conn.password) setValue("password", conn.password);
+      } catch (e) {
+        console.error("Failed to parse last used connection", e);
+      }
+    }
+  }, [setValue]);
 
   const openSaveModal = () => {
     setNewConnectionName("");
@@ -112,6 +129,18 @@ export default function ErGenerator() {
     if (conn.user) setValue("user", conn.user);
     if (conn.password) setValue("password", conn.password);
     
+    const lastUsed = {
+      dbType: conn.dbType,
+      connectionMode: conn.connectionMode,
+      connectionString: conn.connectionString,
+      host: conn.host,
+      port: conn.port,
+      database: conn.database,
+      user: conn.user,
+      password: conn.password,
+    };
+    localStorage.setItem("er-maker-last-connection", JSON.stringify(lastUsed));
+
     setActiveTab("database");
   };
 
@@ -137,6 +166,20 @@ export default function ErGenerator() {
   };
 
   const onSubmit = async (data: any) => {
+    if (activeTab === "database") {
+      const lastUsed = {
+        dbType: data.dbType,
+        connectionMode: data.connectionMode,
+        connectionString: data.connectionString,
+        host: data.host,
+        port: data.port,
+        database: data.database,
+        user: data.user,
+        password: data.password,
+      };
+      localStorage.setItem("er-maker-last-connection", JSON.stringify(lastUsed));
+    }
+
     setLoading(true);
     setError(null);
     setMermaidCode("");

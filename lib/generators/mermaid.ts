@@ -16,7 +16,7 @@ export function generateMermaidCode(schema: Schema, style: DiagramStyle = "chen"
   }
 
   if (style === "chen") {
-    return initDirective + generateMermaidChenCode(schema);
+    return initDirective + generateMermaidChenCode(schema, theme);
   }
   return initDirective + generateMermaidCrowsFootCode(schema);
 }
@@ -60,17 +60,14 @@ function generateMermaidCrowsFootCode(schema: Schema): string {
   return mermaidCode;
 }
 
-function generateMermaidChenCode(schema: Schema): string {
+function generateMermaidChenCode(schema: Schema, theme: string): string {
   let code = "flowchart TD\n";
   
-  // Add default styles for Chen's notation
-  // We can make these configurable later, but for now these are good defaults
-  // that work well with the 'default' theme.
-  // If the theme is 'dark', these might need adjustment, but Mermaid themes usually handle text color.
-  // We'll use somewhat neutral but distinct colors.
-  code += `    classDef entity fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;\n`;
-  code += `    classDef attribute fill:#fff3e0,stroke:#ef6c00,stroke-width:1px;\n`;
-  code += `    classDef relationship fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;\n`;
+  const colors = getThemeColors(theme);
+
+  code += `    classDef entity ${colors.entity};\n`;
+  code += `    classDef attribute ${colors.attribute};\n`;
+  code += `    classDef relationship ${colors.relationship};\n`;
   
   // Helper to get safe IDs
   const getEntityId = (name: string) => `E_${sanitizeId(name)}`;
@@ -139,4 +136,33 @@ function sanitizeType(type: string): string {
     // If type contains spaces (like "character varying"), we might want to simplify or quote.
     // Let's replace spaces with underscores for display safety
     return type.replace(/\s+/g, '_');
+}
+
+function getThemeColors(theme: string) {
+  switch (theme) {
+    case 'dark':
+      return {
+        entity: 'fill:#1f2937,stroke:#60a5fa,stroke-width:2px,color:#fff',
+        attribute: 'fill:#374151,stroke:#fb923c,stroke-width:1px,color:#fff',
+        relationship: 'fill:#374151,stroke:#c084fc,stroke-width:2px,color:#fff'
+      };
+    case 'forest':
+      return {
+        entity: 'fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px',
+        attribute: 'fill:#fff3e0,stroke:#ef6c00,stroke-width:1px',
+        relationship: 'fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px'
+      };
+    case 'neutral':
+      return {
+        entity: 'fill:#f3f4f6,stroke:#4b5563,stroke-width:2px',
+        attribute: 'fill:#ffffff,stroke:#9ca3af,stroke-width:1px',
+        relationship: 'fill:#f9fafb,stroke:#6b7280,stroke-width:2px'
+      };
+    default: // default, base
+      return {
+        entity: 'fill:#e3f2fd,stroke:#1565c0,stroke-width:2px',
+        attribute: 'fill:#fff3e0,stroke:#ef6c00,stroke-width:1px',
+        relationship: 'fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px'
+      };
+  }
 }
