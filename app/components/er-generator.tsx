@@ -32,6 +32,9 @@ export default function ErGenerator() {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [newConnectionName, setNewConnectionName] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [diagramStyle, setDiagramStyle] = useState<"crows_foot" | "chen">("chen");
+  const [theme, setTheme] = useState("default");
+  const [curve, setCurve] = useState("basis");
 
   const { register, handleSubmit, setValue, watch, getValues } = useForm({
     defaultValues: {
@@ -154,6 +157,11 @@ export default function ErGenerator() {
         type: activeTab === "database" ? data.dbType : "sql",
         connectionString: connectionString,
         sql: data.sql,
+        style: diagramStyle,
+        config: {
+          theme,
+          curve,
+        },
       };
 
       const res = await fetch("/api/generate", {
@@ -435,6 +443,75 @@ CREATE TABLE posts (
                   </div>
                 </div>
               )}
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Diagram Style
+                  </label>
+                  <div className="flex gap-4 p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-lg w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setDiagramStyle("crows_foot")}
+                      className={clsx(
+                        "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                        diagramStyle === "crows_foot"
+                          ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                          : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                      )}
+                    >
+                      Crow's Foot
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiagramStyle("chen")}
+                      className={clsx(
+                        "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                        diagramStyle === "chen"
+                          ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                          : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                      )}
+                    >
+                      Chen's Notation
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Theme
+                    </label>
+                    <select
+                      value={theme}
+                      onChange={(e) => setTheme(e.target.value)}
+                      className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="default">Default</option>
+                      <option value="forest">Forest</option>
+                      <option value="dark">Dark</option>
+                      <option value="neutral">Neutral</option>
+                      <option value="base">Base</option>
+                    </select>
+                  </div>
+                  {diagramStyle === "chen" && (
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                        Line Style
+                      </label>
+                      <select
+                        value={curve}
+                        onChange={(e) => setCurve(e.target.value)}
+                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="basis">Curved (Basis)</option>
+                        <option value="linear">Straight (Linear)</option>
+                        <option value="step">Stepped</option>
+                        <option value="monotoneX">Monotone X</option>
+                        <option value="monotoneY">Monotone Y</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex gap-2">
                   <button

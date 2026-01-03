@@ -1,6 +1,27 @@
 import { Schema, Table, Column } from "../types";
 
-export function generateMermaidCode(schema: Schema): string {
+export type DiagramStyle = "crows_foot" | "chen";
+
+export interface MermaidConfig {
+  theme?: string;
+  curve?: string;
+}
+
+export function generateMermaidCode(schema: Schema, style: DiagramStyle = "chen", config: MermaidConfig = {}): string {
+  const { theme = 'default', curve = 'basis' } = config;
+  
+  let initDirective = `%%{init: {'theme': '${theme}'}}%%\n`;
+  if (style === 'chen') {
+     initDirective = `%%{init: {'theme': '${theme}', 'flowchart': {'curve': '${curve}'}}}%%\n`;
+  }
+
+  if (style === "chen") {
+    return initDirective + generateMermaidChenCode(schema);
+  }
+  return initDirective + generateMermaidCrowsFootCode(schema);
+}
+
+function generateMermaidCrowsFootCode(schema: Schema): string {
   let mermaidCode = "erDiagram\n";
 
   // Generate Entities
@@ -37,6 +58,70 @@ export function generateMermaidCode(schema: Schema): string {
   });
 
   return mermaidCode;
+}
+
+function generateMermaidChenCode(schema: Schema): string {
+  let code = "flowchart TD\n";
+  
+  // Add default styles for Chen's notation
+  // We can make these configurable later, but for now these are good defaults
+  // that work well with the 'default' theme.
+  // If the theme is 'dark', these might need adjustment, but Mermaid themes usually handle text color.
+  // We'll use somewhat neutral but distinct colors.
+  code += `    classDef entity fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;\n`;
+  code += `    classDef attribute fill:#fff3e0,stroke:#ef6c00,stroke-width:1px;\n`;
+  code += `    classDef relationship fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;\n`;
+  
+  // Helper to get safe IDs
+  const getEntityId = (name: string) => `E_${sanitizeId(name)}`;
+  const getAttrId = (tableName: string, colName: string) => `A_${sanitizeId(tableName)}_${sanitizeId(colName)}`;
+  
+  schema.tables.forEach(table => {
+      const entityId = getEntityId(table.name);
+      // Entity: Rectangle
+      code += `    ${entityId}["${table.name}"]:::entity\n`;
+      
+      table.columns.forEach(col => {
+          const attrId = getAttrId(table.name, col.name);
+          let label = col.name;
+          // Mermaid HTML labels support basic formatting
+          if (col.isPrimaryKey) {
+              label = `<u>${col.name}</u>`;
+          }
+          
+          // Attribute: Oval (Stadium shape in Mermaid flowchart is ([ ]))
+          code += `    ${attrId}(["${label}"]):::attribute\n`;
+          code += `    ${entityId} --- ${attrId}\n`;
+      });
+  });
+
+  // Relationships
+  let relCounter = 0;
+  schema.tables.forEach(table => {
+      table.columns.forEach(col => {
+          if (col.isForeignKey && col.foreignKeyTargetTable) {
+              const sourceId = getEntityId(table.name);
+              const targetId = getEntityId(col.foreignKeyTargetTable);
+              const relId = `R_${relCounter++}`;
+              
+              // Relationship: Diamond
+              code += `    ${relId}{"${col.name}"}:::relationship\n`;
+              
+              // Connect: Source (Many) - Relationship - Target (One)
+              // The table holding the FK is the "Many" side (N)
+              // The target table is the "One" side (1)
+              
+              code += `    ${sourceId} ---|N| ${relId}\n`;
+              code += `    ${relId} ---|1| ${targetId}\n`;
+          }
+      });
+  });
+
+  return code;
+}
+
+function sanitizeId(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_]/g, "");
 }
 
 function sanitizeName(name: string): string {

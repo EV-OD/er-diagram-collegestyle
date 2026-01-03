@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPostgresSchema } from '@/lib/db/postgres';
 import { getMysqlSchema } from '@/lib/db/mysql';
 import { parseSqlToSchema } from '@/lib/parsers/sql-parser';
-import { generateMermaidCode } from '@/lib/generators/mermaid';
+import { generateMermaidCode, DiagramStyle } from '@/lib/generators/mermaid';
 import { Schema } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { type, connectionString, sql } = body;
+    const { type, connectionString, sql, style, config } = body;
 
     let schema: Schema;
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
     }
 
-    const mermaidCode = generateMermaidCode(schema);
+    const mermaidCode = generateMermaidCode(schema, style as DiagramStyle || 'chen', config);
 
     return NextResponse.json({ mermaidCode });
   } catch (error: any) {
